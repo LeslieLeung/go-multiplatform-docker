@@ -107,28 +107,28 @@ name: build
 
 on:
   release:
-    types: [created] # 表示在创建新的 Release 时触发
+    types: [created] # trigger when a release is created
 
 jobs:
   build-go-binary:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux, windows, darwin] # 需要打包的系统
-        goarch: [amd64, arm64] # 需要打包的架构
-        exclude: # 排除某些平台和架构
+        goos: [linux, windows, darwin] # the required OSs
+        goarch: [amd64, arm64] # the required architectures
+        exclude: # exclude some OSs and architectures
           - goarch: arm64
             goos: windows
     steps:
       - uses: actions/checkout@v3
       - uses: wangyoucao577/go-release-action@v1.30
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }} # 一个默认的变量，用来实现往 Release 中添加文件
+          github_token: ${{ secrets.GITHUB_TOKEN }} # a pre-defined secret to add files to Release
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          goversion: 1.18 # 可以指定编译使用的 Golang 版本
-          binary_name: "hello" # 可以指定二进制文件的名称
-          extra_files: LICENSE README.md # 需要包含的额外文件
+          goversion: 1.18 # the required Go version
+          binary_name: "hello" # the name of the binary executable
+          extra_files: LICENSE README.md # the extra files to add to the release
 ```
 
 When you finish writing a version and ready to release, all you have to do is to tag the commit, say `v0.0.2`, the push it to GitHub.
@@ -241,13 +241,13 @@ build-docker-image:
       - uses: docker/setup-buildx-action@v2
       - uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }} # 记得在 secrets 中添加响应的 secret
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # REMEMBER to add the secret in secrets
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - run: make
       - uses: docker/build-push-action@v3
         with:
           context: .
-          platforms: linux/arm64,linux/amd64 # 需要的平台
+          platforms: linux/arm64,linux/amd64 # required platforms
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 ```
