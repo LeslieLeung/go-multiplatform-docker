@@ -292,7 +292,7 @@ build-docker-image:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - run: go install github.com/mitchellh/gox@latest # 安装 gox
-      - run: make gox-all
+      - run: make gox-linux
       - uses: docker/build-push-action@v3
         with:
           context: .
