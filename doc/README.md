@@ -248,6 +248,83 @@ build-docker-image:
 
 大功告成！
 
+## 番外
+
+经过 v2ex 论坛上的朋友提醒（见原帖 [关于 Golang 多平台打包发布这件事..](https://v2ex.com/t/868435) ），另外还有两种方法供参考。
+
+- [GoReleaser](https://goreleaser.com/)：能够提供跨平台编译及打包 Docker 镜像、发布等，非常强大的工具。有免费和付费的 Pro 版本。
+- [gox](https://github.com/mitchellh/gox)：能够并行编译。
+
+由于 gox 具有并行编译的特性，这里增加一下关于 gox 的介绍。
+
+### 使用 gox 加速发布过程
+
+通过查看 gox 的文档可以发现， gox 的命令非常简单。我们往前面的 Makefile 中添加以下几行。
+
+```makefile
+gox-linux:
+	gox -osarch="linux/amd64 linux/arm64" -output="build/hello_{{.OS}}_{{.Arch}}"
+
+gox-all:
+	gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64" -output="build/hello_{{.OS}}_{{.Arch}}"
+```
+
+此时，运行 `make gox-linux` 或 `make gox-all` 就能完成对应平台的编译了。
+
+同时修改一下 `build.yml`。
+
+```yaml
+build-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/metadata-action@v4
+        id: meta
+        with:
+          images: leslieleung/hello
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - run: go install github.com/mitchellh/gox@latest # 安装 gox
+      - run: make gox-all
+      - uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/arm64,linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+```
+
+## 常见问题
+
+### 权限不足，发布到 Release 失败
+
+原因见 [链接](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#setting-the-permissions-of-the-github_token-for-your-repository)。
+
+解决方法：在 `build.yml` 中添加以下内容。
+
+```yaml
+name: build
+
+on:
+  release:
+    types: [created]
+    
+permissions: # 添加
+  contents: write # 添加
+
+jobs:
+  build-go-binary:
+    runs-on: ubuntu-latest
+...
+```
+
 ## 参考
 
 [GitHub Action - Build and push Docker images](https://github.com/marketplace/actions/build-and-push-docker-images)

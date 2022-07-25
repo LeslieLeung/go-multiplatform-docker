@@ -42,7 +42,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - run: make
+      - run: go install github.com/mitchellh/gox@latest # setup gox
+      - run: make gox-all
       - uses: docker/build-push-action@v3
         with:
           context: .

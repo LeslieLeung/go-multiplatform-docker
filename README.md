@@ -258,6 +258,84 @@ Release a version as mentioned before, then you can see your images on Dockerhub
 
 There you go, well done!
 
+## Other good stuffs
+
+According to the replies on my post on v2ex (see [关于 Golang 多平台打包发布这件事..](https://v2ex.com/t/868435) ), there are two
+other solutions.
+
+- [GoReleaser](https://goreleaser.com/) : Provides the ability to compile cross-platform and build Docker images. Super cool tool with a free and a paid Pro version.
+- [gox](https://github.com/mitchellh/gox) : Provides the ability to compile cross-platform in parallel.
+
+gox can provide us a parallel compile, so let's look into it here.
+
+### Accelerate your release with gox
+
+Upon checking out gox's documentation, it's quite easy-to-use. Let's add the following lines to the Makefile.
+
+```makefile
+gox-linux:
+	gox -osarch="linux/amd64 linux/arm64" -output="build/hello_{{.OS}}_{{.Arch}}"
+
+gox-all:
+	gox -osarch="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64" -output="build/hello_{{.OS}}_{{.Arch}}"
+```
+
+Now, run `make gox-linux` or `make gox-all` should do all the magic.
+
+Also, we have to modify our `build.yml`.
+
+```yaml
+build-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/metadata-action@v4
+        id: meta
+        with:
+          images: leslieleung/hello
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - run: go install github.com/mitchellh/gox@latest # setup gox
+      - run: make gox-all
+      - uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/arm64,linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+```
+
+## FAQ
+
+### Failed to publish to Release due to permission issue
+
+See [link](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#setting-the-permissions-of-the-github_token-for-your-repository)。
+
+Solution: add the following to `build.yml` .
+
+```yaml
+name: build
+
+on:
+  release:
+    types: [created]
+    
+permissions: # ADD ME
+  contents: write # ADD ME
+
+jobs:
+  build-go-binary:
+    runs-on: ubuntu-latest
+...
+```
+
 ## References
 
 [GitHub Action - Build and push Docker images](https://github.com/marketplace/actions/build-and-push-docker-images)
