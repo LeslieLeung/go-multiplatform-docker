@@ -4,6 +4,8 @@
 
 [English](README.md) | 简体中文
 
+> 如果要使用 GoReleaser 进行发布，建议查看新版 [LeslieLeung/gin-application-template](https://github.com/LeslieLeung/gin-application-template)。
+
 一个演示如何使用 GitHub Actions 将一个 Golang 项目打包成多平台的二进制文件并发布到 GitHub Releases 和 DockerHub 的例子。
 
 ## 由来

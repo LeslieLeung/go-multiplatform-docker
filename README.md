@@ -4,6 +4,8 @@
 
 English | [简体中文](doc/README.md)
 
+> For a updated version that uses GoReleaser, you should checkout [LeslieLeung/gin-application-template](https://github.com/LeslieLeung/gin-application-template).
+
 A demo on how to build go multiplatform binaries and publish to release and DockerHub with GitHub Actions.
 
 ## Why this exists?
